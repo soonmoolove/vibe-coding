@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>바이브 코딩 프레젠테이션</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; background: #222; color: #fff; overflow: hidden; }
+        .slide { width: 100vw; height: 100vh; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 50px; box-sizing: border-box; text-align: center; }
+        .slide.active { display: flex; }
+        h1 { font-size: 3em; color: #00ffcc; }
+        p { font-size: 1.5em; line-height: 1.6; }
+        .footer { position: absolute; bottom: 20px; font-size: 0.8em; color: #888; }
+    </style>
+</head>
+<body>
+
+<div id="slides-container"></div>
+
+<script>
+    const slides = [
+        "<h1>바이브 코딩(Vibe Coding)</h1><p>AI와 함께하는 새로운 개발 패러다임</p>",
+        "<h1>1. 바이브 코딩이란?</h1><p>엄밀한 설계보다 AI의 직관과 나의 '느낌'을 중시하는 코딩 방식</p>",
+        "<h1>2. 기원</h1><p>OpenAI 공동창립자 안드레 카파시(Andrej Karpathy)가 2025년 2월 제시</p>",
+        "<h1>3. 핵심 개념</h1><p>자연어 명령을 통해 코드를 생성하고 결과물을 즉시 확인</p>",
+        "<h1>4. '가장 뜨거운 언어는 영어'</h1><p>프로그래밍 언어 대신 일상 언어로 컴퓨터와 소통</p>",
+        "<h1>5. 주요 특징: 즉흥성</h1><p>사전 설계 없이 아이디어를 바로 코드로 구현</p>",
+        "<h1>6. 주요 특징: 빠른 프로토타이핑</h1><p>초기 버전을 신속히 만들고 수정하며 발전시킴</p>",
+        "<h1>7. 개발 환경 변화</h1><p>IDE가 AI 기반 에이전트로 진화 (예: Cursor, Claude Code)</p>",
+        "<h1>8. 장점: 생산성 향상</h1><p>반복적인 작업 자동화 및 구현 속도 극대화</p>",
+        "<h1>9. 장점: 진입 장벽 완화</h1><p>비전문가도 소프트웨어 구현 가능</p>",
+        "<h1>10. 단점: 기술 부채</h1><p>구조적 설계가 부족하여 유지보수 어려움 발생 가능</p>",
+        "<h1>11. 단점: 코드 이해 부족</h1><p>동작 원리를 완벽히 이해하지 못한 채 수용할 위험</p>",
+        "<h1>12. 성공적인 활용법</h1><p>AI 결과물을 검토하고 반복적으로 개선하기</p>",
+        "<h1>13. 미래의 개발자</h1><p>단순 코더에서 AI를 지휘하는 '설계자(Architect)'로</p>",
+        "<h1>15. 결론</h1><p>바이브 코딩은 개발의 효율을 넘어 창의적 탐색의 도구입니다.</p>"
+    ];
+
+    const container = document.getElementById('slides-container');
+    slides.forEach((content, index) => {
+        const div = document.createElement('div');
+        div.className = 'slide' + (index === 0 ? ' active' : '');
+        div.innerHTML = content + `<div class="footer">${index + 1} / 15</div>`;
+        container.appendChild(div);
+    });
+
+    let current = 0;
+    document.addEventListener('keydown', (e) => {
+        if(e.key === 'ArrowRight' && current < 14) {
+            document.querySelectorAll('.slide')[current].classList.remove('active');
+            current++;
+            document.querySelectorAll('.slide')[current].classList.add('active');
+        } else if(e.key === 'ArrowLeft' && current > 0) {
+            document.querySelectorAll('.slide')[current].classList.remove('active');
+            current--;
+            document.querySelectorAll('.slide')[current].classList.add('active');
+        }
+    });
+</script>
+</body>
+</html>
