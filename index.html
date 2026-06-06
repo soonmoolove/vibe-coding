@@ -1,60 +1,925 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>바이브 코딩 프레젠테이션</title>
-    <style>
-        body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; background: #222; color: #fff; overflow: hidden; }
-        .slide { width: 100vw; height: 100vh; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 50px; box-sizing: border-box; text-align: center; }
-        .slide.active { display: flex; }
-        h1 { font-size: 3em; color: #00ffcc; }
-        p { font-size: 1.5em; line-height: 1.6; }
-        .footer { position: absolute; bottom: 20px; font-size: 0.8em; color: #888; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>바이브 코딩 — Vibe Coding</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@700;800;900&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --accent1: #9d86ff;       /* brightened purple */
+    --accent1-deep: #7b61ff;
+    --accent2: #1cf5b5;       /* brightened green */
+    --accent3: #ff6b85;       /* brightened pink */
+    --accent4: #ffce3d;       /* brightened gold */
+    --text: #ffffff;          /* pure white for max contrast */
+    --text-soft: #e8e6ff;
+    --muted: #b4b4d4;         /* much brighter muted */
+    --border: rgba(157,134,255,0.28);
+    --card: rgba(255,255,255,0.055);
+    --body: #e4e1f5;          /* brighter body text */
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    overflow: hidden;
+    cursor: default;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── ANIMATED BACKGROUND ORBS (global) ── */
+  .bg-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb1 { width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(123,97,255,0.55), transparent 70%); top: -15vw; left: -10vw; animation: drift1 22s ease-in-out infinite; }
+  .orb2 { width: 42vw; height: 42vw; background: radial-gradient(circle, rgba(28,245,181,0.4), transparent 70%); bottom: -12vw; right: -8vw; animation: drift2 26s ease-in-out infinite; }
+  .orb3 { width: 35vw; height: 35vw; background: radial-gradient(circle, rgba(255,107,133,0.32), transparent 70%); top: 40%; right: 25%; animation: drift3 30s ease-in-out infinite; }
+  @keyframes drift1 { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(8vw,6vw) scale(1.15);} }
+  @keyframes drift2 { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-7vw,-5vw) scale(1.2);} }
+  @keyframes drift3 { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(-6vw,4vw) scale(0.85);} 66%{transform:translate(5vw,-6vw) scale(1.1);} }
+
+  /* ── SLIDES WRAPPER ── */
+  #deck { width: 100%; height: 100vh; position: relative; z-index: 1; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 5vw 8vw;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.55s cubic-bezier(.4,0,.2,1), transform 0.55s cubic-bezier(.4,0,.2,1);
+    transform: translateY(40px) scale(0.985);
+    overflow: hidden;
+  }
+  .slide.active { opacity: 1; pointer-events: all; transform: translateY(0) scale(1); }
+  .slide.exit-up { opacity: 0; transform: translateY(-40px) scale(0.985); transition: opacity 0.4s, transform 0.4s; }
+
+  /* ── GRID NOISE BACKGROUND ── */
+  .slide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(157,134,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(157,134,255,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    animation: gridShift 20s linear infinite;
+  }
+  @keyframes gridShift { from{background-position:0 0,0 0;} to{background-position:60px 60px,60px 60px;} }
+
+  /* ── REVEAL ANIMATION (replayable) ── */
+  .reveal { opacity: 0; }
+  .slide.active .reveal { animation: fadeUp 0.7s cubic-bezier(.2,.7,.3,1) forwards; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(26px);} to{opacity:1;transform:translateY(0);} }
+  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+  /* staggered delays */
+  .d0{animation-delay:.05s!important;} .d1{animation-delay:.15s!important;} .d2{animation-delay:.25s!important;}
+  .d3{animation-delay:.35s!important;} .d4{animation-delay:.45s!important;} .d5{animation-delay:.55s!important;}
+  .d6{animation-delay:.65s!important;} .d7{animation-delay:.75s!important;} .d8{animation-delay:.85s!important;}
+
+  /* ── TYPOGRAPHY ── */
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 1rem;
+    font-weight: 500;
+    text-shadow: 0 0 18px rgba(28,245,181,0.45);
+  }
+  .slide-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: clamp(3.2rem, 8vw, 7rem);
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .slide-title .hl { color: var(--accent1); text-shadow: 0 0 30px rgba(157,134,255,0.5); }
+  .slide-title .hl2 { color: var(--accent2); text-shadow: 0 0 30px rgba(28,245,181,0.5); }
+  .slide-title .hl3 { color: var(--accent3); text-shadow: 0 0 30px rgba(255,107,133,0.5); }
+  .slide-title .hl4 { color: var(--accent4); text-shadow: 0 0 30px rgba(255,206,61,0.5); }
+
+  /* ── LAYOUT HELPERS ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 3vw; width: 100%; max-width: 1200px; }
+  .content-block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    backdrop-filter: blur(4px);
+  }
+  .block-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent1);
+    margin-bottom: 0.85rem;
+    font-weight: 700;
+  }
+  .block-body { font-size: clamp(0.95rem, 1.5vw, 1.1rem); line-height: 1.85; color: var(--body); }
+  .block-body strong { color: #fff; font-weight: 700; }
+  .block-body li { list-style: none; padding: 0.4rem 0; padding-left: 1.3rem; position: relative; }
+  .block-body li::before { content: '▸'; position: absolute; left: 0; color: var(--accent2); }
+
+  /* ── COVER (Slide 1) ── */
+  #s1 { align-items: flex-start; justify-content: center; }
+  .cover-course {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(0.72rem, 1.3vw, 0.95rem);
+    color: var(--accent4);
+    letter-spacing: 0.14em;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    text-shadow: 0 0 16px rgba(255,206,61,0.4);
+  }
+  .cover-label {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(0.72rem, 1.4vw, 1rem);
+    color: var(--accent2);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+  .cover-main {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: clamp(4.5rem, 14vw, 13rem);
+    line-height: 0.9;
+    letter-spacing: 0.01em;
+    margin-top: 0.25em;
+  }
+  .cover-main span { color: var(--accent1); text-shadow: 0 0 50px rgba(157,134,255,0.55); }
+  .cover-sub {
+    margin-top: 1.6rem;
+    font-size: clamp(1.05rem, 2vw, 1.35rem);
+    color: var(--text-soft);
+    font-weight: 400;
+    max-width: 640px;
+    line-height: 1.8;
+  }
+  .cover-team {
+    margin-top: 2.2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    max-width: 760px;
+  }
+  .team-chip {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: clamp(0.78rem, 1.3vw, 0.95rem);
+    font-weight: 500;
+    color: #fff;
+    background: rgba(157,134,255,0.14);
+    border: 1px solid rgba(157,134,255,0.4);
+    border-radius: 100px;
+    padding: 0.4rem 1rem;
+    backdrop-filter: blur(4px);
+    transition: transform 0.25s, background 0.25s;
+  }
+  .team-chip:hover { transform: translateY(-3px); background: rgba(157,134,255,0.28); }
+  .team-chip b { color: var(--accent2); font-weight: 700; }
+  .cover-deco {
+    position: absolute;
+    right: -5vw;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 35vw;
+    color: rgba(157,134,255,0.05);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: -0.05em;
+    animation: floatDeco 12s ease-in-out infinite;
+  }
+  @keyframes floatDeco { 0%,100%{transform:translateY(-50%) rotate(0);} 50%{transform:translateY(-54%) rotate(-2deg);} }
+
+  /* ── TIMELINE SLIDE ── */
+  .timeline { display: flex; flex-direction: column; gap: 1.2rem; width: 100%; max-width: 900px; }
+  .tl-item { display: grid; grid-template-columns: 120px 1fr; gap: 1.5rem; align-items: start; }
+  .tl-date { font-family: 'DM Mono', monospace; font-size: 0.92rem; color: var(--accent4); padding-top: 0.3rem; letter-spacing: 0.05em; font-weight: 500; }
+  .tl-content {
+    background: var(--card);
+    border-left: 3px solid var(--accent1);
+    border-radius: 0 12px 12px 0;
+    padding: 1.1rem 1.6rem;
+    font-size: clamp(0.92rem, 1.4vw, 1.05rem);
+    line-height: 1.7;
+    color: var(--body);
+    transition: transform 0.3s, border-color 0.3s;
+  }
+  .tl-content:hover { transform: translateX(8px); border-color: var(--accent2); }
+  .tl-content strong { color: #fff; font-weight: 700; }
+  .tl-content em { color: var(--accent2); font-style: normal; }
+
+  /* ── STAT CARDS ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5vw; width: 100%; max-width: 1100px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 2rem 1.5rem; text-align: center; }
+  .stat-card:nth-child(1) { border-top: 3px solid var(--accent1); }
+  .stat-card:nth-child(2) { border-top: 3px solid var(--accent2); }
+  .stat-card:nth-child(3) { border-top: 3px solid var(--accent3); }
+  .stat-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: clamp(2.6rem, 5vw, 4rem); line-height: 1; margin-bottom: 0.4rem; }
+  .stat-card:nth-child(1) .stat-num { color: var(--accent1); }
+  .stat-card:nth-child(2) .stat-num { color: var(--accent2); }
+  .stat-card:nth-child(3) .stat-num { color: var(--accent3); }
+  .stat-label { font-size: 0.95rem; color: var(--muted); line-height: 1.5; }
+
+  /* ── PROS / CONS ── */
+  .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 2vw; width: 100%; max-width: 1100px; }
+  .pc-card { border-radius: 20px; padding: 2rem 2.5rem; }
+  .pc-card.pros { background: rgba(28,245,181,0.08); border: 1px solid rgba(28,245,181,0.3); }
+  .pc-card.cons { background: rgba(255,107,133,0.08); border: 1px solid rgba(255,107,133,0.3); }
+  .pc-title { font-family: 'DM Mono', monospace; font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1.2rem; font-weight: 700; }
+  .pros .pc-title { color: var(--accent2); }
+  .cons .pc-title { color: var(--accent3); }
+  .pc-list { list-style: none; }
+  .pc-list li { padding: 0.55rem 0; padding-left: 1.6rem; position: relative; font-size: clamp(0.92rem, 1.4vw, 1.05rem); line-height: 1.6; color: var(--body); border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .pc-list li:last-child { border-bottom: none; }
+  .pros .pc-list li::before { content: '+'; position: absolute; left: 0; color: var(--accent2); font-weight: 700; }
+  .cons .pc-list li::before { content: '−'; position: absolute; left: 0; color: var(--accent3); font-weight: 700; }
+
+  /* ── TOOL CARDS ── */
+  .tools-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2vw; width: 100%; max-width: 1100px; }
+  .tool-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.6rem 1.2rem; text-align: center; transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s; }
+  .tool-card:hover { border-color: var(--accent1); transform: translateY(-6px); box-shadow: 0 12px 30px rgba(123,97,255,0.25); }
+  .tool-icon { font-size: 2.1rem; margin-bottom: 0.6rem; }
+  .tool-name { font-family: 'DM Mono', monospace; font-size: 0.88rem; color: var(--accent1); margin-bottom: 0.35rem; font-weight: 500; }
+  .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+  /* ── QUOTE SLIDE ── */
+  .big-quote { max-width: 920px; text-align: left; }
+  .quote-mark { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 8rem; line-height: 0.6; color: var(--accent1); opacity: 0.5; margin-bottom: 0.5rem; }
+  .quote-text { font-size: clamp(1.25rem, 2.5vw, 1.9rem); line-height: 1.7; color: #fff; font-weight: 400; }
+  .quote-text em { color: var(--accent2); font-style: normal; font-weight: 600; }
+  .quote-author { margin-top: 2rem; font-family: 'DM Mono', monospace; font-size: 0.9rem; color: var(--muted); letter-spacing: 0.08em; }
+
+  /* ── PROCESS STEPS ── */
+  .steps { display: flex; gap: 1vw; align-items: stretch; width: 100%; max-width: 1100px; }
+  .step { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.6rem 1rem; text-align: center; position: relative; transition: transform 0.3s, border-color 0.3s; }
+  .step:hover { transform: translateY(-5px); border-color: var(--accent2); }
+  .step::after { content: '→'; position: absolute; right: -0.9vw; top: 50%; transform: translateY(-50%); color: var(--accent1); font-size: 1.3rem; z-index: 2; }
+  .step:last-child::after { display: none; }
+  .step-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 2.6rem; color: var(--accent1); line-height: 1; margin-bottom: 0.5rem; }
+  .step-name { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem; }
+  .step-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+  /* ── SECURITY SLIDE ── */
+  .security-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5vw; width: 100%; max-width: 1100px; }
+  .sec-item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; display: flex; gap: 1rem; align-items: flex-start; transition: transform 0.3s; }
+  .sec-item:hover { transform: scale(1.025); }
+  .sec-item:nth-child(1), .sec-item:nth-child(2) { border-left: 3px solid var(--accent3); }
+  .sec-item:nth-child(3), .sec-item:nth-child(4) { border-left: 3px solid var(--accent4); }
+  .sec-icon { font-size: 1.7rem; flex-shrink: 0; }
+  .sec-title { font-size: 0.98rem; font-weight: 700; color: #fff; margin-bottom: 0.3rem; }
+  .sec-body { font-size: 0.86rem; color: var(--muted); line-height: 1.6; }
+
+  /* ── FUTURE SLIDE ── */
+  .future-list { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 880px; }
+  .future-item { display: flex; gap: 1.5rem; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.3rem 1.9rem; transition: transform 0.3s, border-color 0.3s; }
+  .future-item:hover { transform: translateX(10px); border-color: var(--accent1); }
+  .fi-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 2.6rem; color: var(--accent1); opacity: 0.55; min-width: 2.5rem; }
+  .fi-text { font-size: clamp(0.92rem, 1.5vw, 1.1rem); line-height: 1.6; color: var(--body); }
+  .fi-text strong { color: #fff; font-weight: 700; }
+
+  /* ── COMPARISON ── */
+  .comparison { display: grid; grid-template-columns: 1fr auto 1fr; gap: 2vw; align-items: center; width: 100%; max-width: 1050px; }
+  .cmp-col { background: var(--card); border-radius: 20px; padding: 2rem; }
+  .cmp-col:first-child { border-top: 3px solid var(--muted); }
+  .cmp-col:last-child { border-top: 3px solid var(--accent1); }
+  .cmp-label { font-family: 'DM Mono', monospace; font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1.2rem; font-weight: 700; }
+  .cmp-col:first-child .cmp-label { color: var(--muted); }
+  .cmp-col:last-child .cmp-label { color: var(--accent1); }
+  .cmp-vs { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 4rem; color: var(--accent3); text-align: center; animation: pulseVs 2.5s ease-in-out infinite; }
+  @keyframes pulseVs { 0%,100%{transform:scale(1);opacity:0.8;} 50%{transform:scale(1.12);opacity:1;} }
+  .cmp-row { display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.95rem; color: var(--body); }
+  .cmp-row:last-child { border-bottom: none; }
+  .cmp-row-label { color: var(--muted); font-size: 0.8rem; margin-bottom: 0.1rem; }
+
+  /* ── END SLIDE ── */
+  #s15 { align-items: center; justify-content: center; }
+  .end-course {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(0.72rem, 1.3vw, 0.95rem);
+    color: var(--accent4);
+    letter-spacing: 0.12em;
+    margin-bottom: 1.6rem;
+    text-align: center;
+    text-shadow: 0 0 16px rgba(255,206,61,0.4);
+  }
+  .end-circle {
+    width: clamp(190px, 26vw, 300px);
+    height: clamp(190px, 26vw, 300px);
+    border-radius: 50%;
+    border: 2px solid var(--accent1);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; position: relative;
+    animation: popIn 0.8s 0.1s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  @keyframes popIn { from{opacity:0;transform:scale(0.6);} to{opacity:1;transform:scale(1);} }
+  .end-circle::before { content: ''; position: absolute; inset: -20px; border-radius: 50%; border: 1px solid rgba(157,134,255,0.22); animation: pulse 3s infinite; }
+  .end-circle::after { content: ''; position: absolute; inset: -40px; border-radius: 50%; border: 1px solid rgba(157,134,255,0.12); animation: pulse 3s 0.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(1.05);} }
+  .end-word { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: clamp(2.6rem, 6vw, 4.5rem); line-height: 1; color: var(--accent1); text-shadow: 0 0 30px rgba(157,134,255,0.5); }
+  .end-sub { font-size: clamp(0.8rem, 1.5vw, 1rem); color: var(--text-soft); margin-top: 0.5rem; letter-spacing: 0.1em; }
+  .end-team {
+    margin-top: 2.2rem;
+    display: flex; flex-wrap: wrap; gap: 0.55rem;
+    max-width: 780px; justify-content: center;
+  }
+  .end-tags { display: flex; gap: 0.7rem; margin-top: 1.4rem; flex-wrap: wrap; justify-content: center; }
+  .end-tag { font-family: 'DM Mono', monospace; font-size: 0.8rem; background: var(--card); border: 1px solid var(--border); color: var(--text-soft); padding: 0.4rem 1rem; border-radius: 100px; }
+
+  /* ── PROGRESS BAR ── */
+  #progress { position: fixed; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--accent1), var(--accent2)); transition: width 0.5s ease; z-index: 100; box-shadow: 0 0 12px rgba(157,134,255,0.6); }
+
+  #counter { position: fixed; bottom: 1.5rem; right: 2rem; font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--muted); z-index: 100; letter-spacing: 0.1em; }
+
+  .nav-btn { position: fixed; top: 50%; transform: translateY(-50%); background: var(--card); border: 1px solid var(--border); color: var(--text-soft); width: 2.6rem; height: 2.6rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; font-size: 1.05rem; transition: all 0.2s; user-select: none; }
+  .nav-btn:hover { border-color: var(--accent1); color: #fff; background: rgba(157,134,255,0.15); }
+  #nav-prev { left: 1rem; } #nav-next { right: 1rem; }
+
+  #dots { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.5rem; z-index: 100; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); cursor: pointer; transition: all 0.3s; opacity: 0.5; }
+  .dot.active { background: var(--accent1); opacity: 1; width: 22px; border-radius: 4px; box-shadow: 0 0 10px rgba(157,134,255,0.7); }
+
+  /* ── IMPACT ROW ── */
+  .impact-row { display: flex; gap: 1.5vw; width: 100%; max-width: 1100px; }
+  .impact-item { flex: 1; border-radius: 16px; padding: 1.6rem; background: var(--card); border: 1px solid var(--border); transition: transform 0.3s, border-color 0.3s; }
+  .impact-item:hover { transform: translateY(-6px); border-color: var(--accent2); }
+  .impact-icon { font-size: 2.1rem; margin-bottom: 0.7rem; }
+  .impact-title { font-size: 0.98rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem; }
+  .impact-desc { font-size: 0.84rem; color: var(--muted); line-height: 1.6; }
+
+  /* ── CONCEPT DIAGRAM ── */
+  .concept-center { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; width: 100%; max-width: 1050px; }
+  .concept-arrows { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; }
+  .ca-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem 1.6rem; font-size: 0.95rem; color: var(--body); line-height: 1.7; transition: transform 0.3s; }
+  .ca-item:hover { transform: scale(1.02); }
+  .ca-item strong { color: #fff; font-weight: 700; }
+  .ca-item em { color: var(--accent2); font-style: normal; }
+
+  /* responsive */
+  @media (max-width: 768px) {
+    .two-col, .pros-cons, .security-grid, .comparison { grid-template-columns: 1fr; }
+    .tools-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-grid { grid-template-columns: 1fr; }
+    .steps { flex-direction: column; }
+    .step::after { content: '↓'; right: auto; top: auto; bottom: -1.2rem; left: 50%; transform: translateX(-50%); }
+    .impact-row { flex-direction: column; }
+    .concept-arrows { grid-template-columns: 1fr; }
+  }
+
+  /* ── REMOTE CONTROL ── */
+  #remote-trigger { position: fixed; top: 0; right: 0; width: 80px; height: 80px; z-index: 200; cursor: default; }
+  #remote-trigger::before { content: '⌨'; position: absolute; top: 1.2rem; right: 1.4rem; font-size: 1.3rem; color: rgba(157,134,255,0.45); transition: color 0.3s; pointer-events: none; }
+  #remote-trigger:hover::before { color: rgba(157,134,255,1); }
+  #remote { position: fixed; top: 1rem; right: 1rem; width: 235px; background: rgba(14,14,22,0.94); border: 1px solid rgba(157,134,255,0.4); border-radius: 18px; padding: 1.2rem 1.3rem 1.4rem; z-index: 201; backdrop-filter: blur(18px); box-shadow: 0 8px 40px rgba(0,0,0,0.55); opacity: 0; pointer-events: none; transform: translateY(-8px) scale(0.97); transition: opacity 0.25s ease, transform 0.25s ease; }
+  #remote.visible { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+  .remote-header { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent1); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .remote-header::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); box-shadow: 0 0 6px var(--accent2); animation: blink 1.8s infinite; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+  .remote-section { margin-bottom: 0.85rem; }
+  .remote-section-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.45rem; }
+  .remote-rows { display: flex; flex-direction: column; gap: 0.3rem; }
+  .remote-row { display: flex; align-items: center; gap: 0.5rem; }
+  .rkey { display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-bottom: 2px solid rgba(255,255,255,0.26); border-radius: 6px; padding: 0.18rem 0.45rem; font-family: 'DM Mono', monospace; font-size: 0.7rem; color: #fff; white-space: nowrap; flex-shrink: 0; min-width: 1.6rem; text-align: center; }
+  .rkey.wide { padding: 0.18rem 0.7rem; }
+  .rdesc { font-size: 0.74rem; color: #c0c0e0; line-height: 1.4; }
+  .remote-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 0.7rem 0; }
+</style>
 </head>
 <body>
 
-<div id="slides-container"></div>
+<div class="bg-orb orb1"></div>
+<div class="bg-orb orb2"></div>
+<div class="bg-orb orb3"></div>
+
+<div id="deck">
+
+  <!-- SLIDE 1: COVER -->
+  <div class="slide active" id="s1">
+    <div class="cover-deco">VC</div>
+    <div class="cover-course reveal d0">이화여자대학교 · 2026년 1학기 · AI와 비즈니스 애플리케이션 · Mission 6 · 7조</div>
+    <div class="cover-label reveal d1">Wikipedia KO · 2025–2026</div>
+    <div class="cover-main reveal d2">VIBE<br><span>CODING</span></div>
+    <div class="cover-sub reveal d3">
+      AI와 함께 "느낌대로" 코딩하는 새로운 패러다임 —<br>
+      자연어로 소프트웨어를 만드는 시대의 도래
+    </div>
+    <div class="cover-team reveal d4">
+      <span class="team-chip">박민교 <b>철학 22</b></span>
+      <span class="team-chip">안은서 <b>커미 21</b></span>
+      <span class="team-chip">우민정 <b>경영 23</b></span>
+      <div style="flex-basis:100%; height:0;"></div>
+      <span class="team-chip">박혜원 <b>영문 23</b></span>
+      <span class="team-chip">송은채 <b>경영 24</b></span>
+      <span class="team-chip">Ei Shwe Sin <b>경영 23</b></span>
+      <span class="team-chip">조현지 <b>통계 22</b></span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: 목차 -->
+  <div class="slide" id="s2">
+    <div class="eyebrow reveal d0">Table of Contents</div>
+    <div class="slide-title reveal d1" style="font-size:clamp(2.8rem,6vw,5rem);margin-bottom:2rem;">목차</div>
+    <div class="two-col" style="max-width:900px;">
+      <div class="content-block reveal d2">
+        <div class="block-title">개념 &amp; 역사</div>
+        <ul class="block-body">
+          <li>바이브 코딩이란?</li>
+          <li>용어의 탄생 — 안드레이 카파시</li>
+          <li>전통 코딩 vs 바이브 코딩</li>
+          <li>핵심 작동 원리</li>
+        </ul>
+      </div>
+      <div class="content-block reveal d4">
+        <div class="block-title">분석 &amp; 전망</div>
+        <ul class="block-body">
+          <li>주요 활용 도구</li>
+          <li>장점과 기회</li>
+          <li>한계와 우려사항</li>
+          <li>보안 리스크</li>
+          <li>산업 &amp; 사회적 영향</li>
+          <li>미래 전망</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: 정의 -->
+  <div class="slide" id="s3">
+    <div class="eyebrow reveal d0">Definition</div>
+    <div class="slide-title reveal d1"><span class="hl">바이브</span> 코딩이란?</div>
+    <div style="display:flex;gap:2vw;width:100%;max-width:1050px;margin-top:2rem;">
+      <div class="content-block reveal d2" style="flex:1.3;">
+        <div class="block-title">핵심 정의</div>
+        <div class="block-body" style="font-size:clamp(1rem,1.8vw,1.18rem);line-height:1.9;">
+          개발자가 <strong>생성형 AI(LLM)</strong>의 도움을 받아<br> 코드를 작성하는 방식.<br><br>
+
+프로그래머는 코드를 직접 한 줄씩 작성하기보다, <br>
+자연어 프롬프트로 원하는 기능과 방향을 제시하고,<br> 
+구체적인 구현은 AI가 생성한 코드를 실행·수정하며 완성한다.<br> <br>
+
+
+          코드를 한 줄 한 줄 직접 작성하는 대신 <br> <strong>자연어 프롬프트</strong>로 소프트웨어를 생성한다.
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:1rem;">
+        <div class="content-block reveal d3">
+          <div class="block-title">키워드</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.3rem;">
+            <span style="background:rgba(157,134,255,0.22);border:1px solid rgba(157,134,255,0.45);border-radius:8px;padding:0.32rem 0.85rem;font-size:0.85rem;color:#fff;font-weight:500;">자연어</span>
+            <span style="background:rgba(28,245,181,0.16);border:1px solid rgba(28,245,181,0.4);border-radius:8px;padding:0.32rem 0.85rem;font-size:0.85rem;color:#fff;font-weight:500;">LLM</span>
+            <span style="background:rgba(255,206,61,0.16);border:1px solid rgba(255,206,61,0.4);border-radius:8px;padding:0.32rem 0.85rem;font-size:0.85rem;color:#fff;font-weight:500;">직관</span>
+            <span style="background:rgba(255,107,133,0.16);border:1px solid rgba(255,107,133,0.4);border-radius:8px;padding:0.32rem 0.85rem;font-size:0.85rem;color:#fff;font-weight:500;">AI 협업</span>
+            <span style="background:rgba(157,134,255,0.16);border:1px solid rgba(157,134,255,0.35);border-radius:8px;padding:0.32rem 0.85rem;font-size:0.85rem;color:#fff;font-weight:500;">프로토타입</span>
+            <span style="background:rgba(28,245,181,0.14);border:1px solid rgba(28,245,181,0.3);border-radius:8px;padding:0.32rem 0.85rem;font-size:0.85rem;color:#fff;font-weight:500;">빠른 개발</span>
+          </div>
+        </div>
+        <div class="content-block reveal d4">
+          <div class="block-title">콜린스 사전</div>
+          <div class="block-body">2025년 <strong>"올해의 단어"</strong>로 선정.<br> Merriam-Webster 사전에 <br> “Slang & Trending” 항목에 소개. </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: 역사 -->
+  <div class="slide" id="s4">
+    <div class="eyebrow reveal d0">Origin &amp; History</div>
+    <div class="slide-title reveal d1">용어의 <span class="hl2">탄생</span></div>
+    <div class="timeline" style="margin-top:2rem;">
+      <div class="tl-item reveal d2">
+        <div class="tl-date">2023년</div>
+        <div class="tl-content"><strong>카파시의 문제 제기</strong> — "가장 인기 있는 새로운 프로그래밍 언어는 영어다."<br> LLM이 발전하면 인간은 컴퓨터에 명령하기 위해 특정 프로그래밍 언어를 배울 필요가 <br> 없어질 것이라 주장.</div>
+      </div>
+      <div class="tl-item reveal d3">
+        <div class="tl-date">2025년 2월</div>
+        <div class="tl-content"><strong>안드레이 카파시(Andrej Karpathy)</strong> — OpenAI 창립 멤버, Tesla 前 AI 리더. <br> X(트위터)에 "바이브 코딩(Vibe Coding)"이라는 용어를 최초 사용. <br> <em>"바이브에 완전히 순응하고, 기하급수적 변화를 포용하며, <br> 코드가 있다는 것조차 잊어버리는 것"</em></div>
+      </div>
+      <div class="tl-item reveal d4">
+        <div class="tl-date">2025년 3월</div>
+        <div class="tl-content"><strong>Merriam-Webster</strong> 사전에 "속어 및 트렌드" 항목에 소개<br> Business Insider가 "실리콘 밸리의 새로운 유행어"로 조명.</div>
+      </div>
+      <div class="tl-item reveal d5">
+        <div class="tl-date">2025년 말</div>
+        <div class="tl-content"><strong>Collins Dictionary "올해의 단어"</strong> 선정. <br> 전 세계 개발 생태계 전반으로 개념 확산.<br>  주요 기업·스타트업에서 실전 도입 본격화.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: 인물 & 핵심 인용 -->
+  <div class="slide" id="s5">
+    <div class="eyebrow reveal d0">Key Quote</div>
+    <div class="big-quote reveal d1">
+      <div class="quote-mark">"</div>
+      <div class="quote-text">
+        실제로 코딩은 아니다.<br> 저는 그저 <em>사물을 보고, 말하고, 실행하고,</em><br>
+        복사해서 붙여넣기만 하면 <em>대부분 작동한다.</em><br>
+        바이브에 완전히 순응하고, 기하급수적인 변화를 포용하며,<br>
+        <em>코드가 있다는 것조차 잊어버리는 것.</em>
+      </div>
+      <div class="quote-author">— Andrej Karpathy, 2025. 02 · OpenAI 창립 멤버 / Tesla 前 AI 리더</div>
+    </div>
+    <div class="reveal d4" style="margin-top:2rem;max-width:900px;width:100%;">
+      <div class="content-block" style="background:rgba(157,134,255,0.1);border-color:rgba(157,134,255,0.35);">
+        <div class="block-body">
+          카파시는 바이브 코딩에 <strong>한계가 있음을 인정</strong>하면서도,<br> AI 도구가 항상 버그를 수정할 수 있는 것은 아니기 때문에 <br>
+          <strong>문제가 해결될 때까지 여러 변경을 시도해봐야 한다</strong>고 보았다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: 전통 vs 바이브 -->
+  <div class="slide" id="s6">
+    <div class="eyebrow reveal d0">Comparison</div>
+    <div class="slide-title reveal d1" style="margin-bottom:2rem;">전통 <span class="hl3">VS</span> 바이브</div>
+    <div class="comparison">
+      <div class="cmp-col reveal d2">
+        <div class="cmp-label">전통적 코딩</div>
+        <div class="cmp-row"><div><div class="cmp-row-label">접근방식</div>언어 · 문법 기반 직접 작성</div></div>
+        <div class="cmp-row"><div><div class="cmp-row-label">필수 역량</div>프로그래밍 언어 · 구조 이해</div></div>
+        <div class="cmp-row"><div><div class="cmp-row-label">개발 속도</div>수주 ~ 수개월</div></div>
+        <div class="cmp-row"><div><div class="cmp-row-label">코드 이해도</div>높은 이해 필수</div></div>
+        <div class="cmp-row"><div><div class="cmp-row-label">진입 장벽</div>높음</div></div>
+        <div class="cmp-row"><div><div class="cmp-row-label">적합 상황</div>대규모 프로덕션</div></div>
+      </div>
+      <div class="cmp-vs reveal d3">VS</div>
+      <div class="cmp-col reveal d4">
+        <div class="cmp-label">바이브 코딩</div>
+        <div class="cmp-row"><div><div class="cmp-row-label">접근방식</div>자연어 프롬프트 기반 생성</div></div>
+        <div class="cmp-row"><div><div class="cmp-row-label">필수 역량</div>프롬프트 설계 · 결과 검증</div></div>
+        <div class="cmp-row"><div><div class="cmp-row-label">개발 속도</div>상대적으로 빠름<br>
+몇 시간~수일</div></div>
+        <div class="cmp-row"><div><div class="cmp-row-label">코드 이해도</div>전체 이해 없이 진행 가능</div></div>
+        <div class="cmp-row"><div><div class="cmp-row-label">진입 장벽</div>낮음</div></div>
+        <div class="cmp-row"><div><div class="cmp-row-label">적합 상황</div>프로토타입 · MVP · 개인용 도구</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: 작동 원리 -->
+  <div class="slide" id="s7">
+    <div class="eyebrow reveal d0">How It Works</div>
+    <div class="slide-title reveal d1" style="margin-bottom:2rem;">작동 <span class="hl2">원리</span></div>
+    <div class="steps">
+      <div class="step reveal d2"><div class="step-num">01</div><div class="step-name">목표 설명</div><div class="step-desc">자연어로 원하는 <br> 기능을 구체적으로 <br> 설명</div></div>
+      <div class="step reveal d3"><div class="step-num">02</div><div class="step-name">AI 코드 생성</div><div class="step-desc">LLM이 프롬프트를 <br> 해석해 초기 코드 <br> 생성</div></div>
+      <div class="step reveal d4"><div class="step-num">03</div><div class="step-name">실행 &amp; 관찰</div><div class="step-desc">생성된 코드를 <br> 실행하여 <br> 동작 확인</div></div>
+      <div class="step reveal d5"><div class="step-num">04</div><div class="step-name">피드백 제공</div><div class="step-desc">오류나 개선점을 <br> 다시 자연어로 <br> 지시</div></div>
+      <div class="step reveal d6"><div class="step-num">05</div><div class="step-name">반복 개선</div><div class="step-desc">완성될 때까지 <br> 대화형으로 <br> 반복 수정</div></div>
+    </div>
+    <div class="reveal d7" style="margin-top:2rem;max-width:1100px;width:100%;">
+      <div class="content-block" style="background:rgba(28,245,181,0.08);border-color:rgba(28,245,181,0.28);">
+        <div class="block-body">
+          카파시는 자신의 접근 방식을 <strong>대화형 · 음성 기반</strong>으로 설명했다. <br> AI가 실제 코드를 생성하는 동안 <strong>음성으로 된 명령들을 사용</strong>하며<br> 커서(Cursor) 같은 AI 코드 에디터와 <br> SuperWhisper 같은 음성 입력 도구를 함께 활용했다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: 주요 도구 -->
+  <div class="slide" id="s8">
+    <div class="eyebrow reveal d0">Tools &amp; Platforms</div>
+    <div class="slide-title reveal d1" style="margin-bottom:2rem;">주요 <span class="hl">도구</span></div>
+    <div class="tools-grid">
+      <div class="tool-card reveal d2"><div class="tool-icon">🖱️</div><div class="tool-name">Cursor</div><div class="tool-desc">AI 기반 코드 에디터. <br> 맥락 인식 코드 생성 <br> 및 수정</div></div>
+      <div class="tool-card reveal d2"><div class="tool-icon">🌊</div><div class="tool-name">Windsurf</div><div class="tool-desc">AI 기반 IDE. <br> 에이전트형 코드 생성과 <br> 개발 흐름 지원.</div></div>
+      <div class="tool-card reveal d3"><div class="tool-icon">🎙️</div><div class="tool-name">SuperWhisper</div><div class="tool-desc">음성 → 텍스트 변환. <br> 말로 프롬프트 <br> 입력 가능</div></div>
+      <div class="tool-card reveal d3"><div class="tool-icon">🤖</div><div class="tool-name">Claude Code</div><div class="tool-desc">Anthropic의 <br> 에이전틱 코딩 CLI. <br> 복잡한 작업 자동화</div></div>
+      <div class="tool-card reveal d4"><div class="tool-icon">⚡</div><div class="tool-name">GitHub Copilot</div><div class="tool-desc">GitHub의 AI 코딩 도우미. <br> 코드 자동완성 · 채팅 <br> 및 작업 제안 지원</div></div>
+      <div class="tool-card reveal d4"><div class="tool-icon">🏗️</div><div class="tool-name">Bolt.new</div><div class="tool-desc">브라우저에서 <br> 풀스택 앱을 <br> 즉시 생성 · 배포</div></div>
+      <div class="tool-card reveal d5"><div class="tool-icon">🔮</div><div class="tool-name">Replit Agent</div><div class="tool-desc">자연어로 <br> 전체 프로젝트 구조 <br> 자동 설계 및 실행</div></div>
+      <div class="tool-card reveal d5"><div class="tool-icon">🌐</div><div class="tool-name">Lovable</div><div class="tool-desc">텍스트 입력만으로 <br> 웹앱 전체를 <br> 생성하는 플랫폼</div></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: 장점 -->
+  <div class="slide" id="s9">
+    <div class="eyebrow reveal d0">Advantages</div>
+    <div class="slide-title reveal d1" style="margin-bottom:2rem;"><span class="hl2">장점</span>과 기회</div>
+    <div class="impact-row">
+      <div class="impact-item reveal d2"><div class="impact-icon">🚀</div><div class="impact-title">개발 속도</div><div class="impact-desc">프로토타입<br> 제작 시간을<br>  수주 단위에서<br>수시간~수일<br>단위로 단축. <br>아이디어 → 실제 제품<br>  사이클을 극적으로 <br>단축.</div></div>
+      <div class="impact-item reveal d3"><div class="impact-icon">🚪</div><div class="impact-title">접근성 향상</div><div class="impact-desc">비전공자 창업자, <br>디자이너, 기획자도 <br>기능하는 소프트웨어를<br> 직접 구현 가능.<br> 기술 장벽 해소.</div></div>
+      <div class="impact-item reveal d4"><div class="impact-icon">🧪</div><div class="impact-title">빠른 실험</div><div class="impact-desc">MVP 이전 단계에서 <br>아이디어를 빠르게 <br>가시화. <br>고객 피드백을<br> 조기에 수집하여<br> 제품-시장 적합성<br> 탐색.</div></div>
+      <div class="impact-item reveal d5"><div class="impact-icon">💡</div><div class="impact-title">창의성 집중</div><div class="impact-desc">반복적이고 단순한<br> 코드 생성은 AI에<br> 위임. 개발자는 <br>비즈니스 로직·아키텍처<br>·검증에 집중 가능.</div></div>
+    </div>
+    <div class="reveal d6" style="margin-top:1.5rem;width:100%;max-width:1100px;">
+      <div class="stat-grid">
+        <div class="stat-card" style="padding:1.3rem;border-radius:12px;"><div class="stat-num" data-count="84" data-suffix="%">0%</div><div class="stat-label">Stack Overflow <br>2025년 기준<br> AI 코딩 도구<br>사용 중이거나 <br>사용 예정 개발자</div></div>
+        <div class="stat-card" style="padding:1.3rem;border-radius:12px;"><div class="stat-num">3–5×</div><div class="stat-label">일반적인 작업 대비<br>생산성 향상 배수<br>단, 프로젝트 맥락에<br>따라 편차 큼</div></div>
+        <div class="stat-card" style="padding:1.3rem;border-radius:12px;"><div class="stat-num">수시간</div><div class="stat-label">프로토타입 완성까지<br>걸리는 시간 <br>(기존 대비)</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: 한계 & 우려 -->
+  <div class="slide" id="s10">
+    <div class="eyebrow reveal d0">Limitations &amp; Concerns</div>
+    <div class="slide-title reveal d1" style="margin-bottom:2rem;"><span class="hl3">한계</span>와 우려</div>
+    <div class="pros-cons">
+      <div class="pc-card pros reveal d2">
+        <div class="pc-title">적합한 환경</div>
+        <ul class="pc-list">
+          <li>MVP / 프로토타입 제작</li>
+          <li>아이디어 신속 검증</li>
+          <li>비기술 창업자의 초기 검증용 MVP</li>
+          <li>내부 업무 도구 · 간단한 스크립트</li>
+          <li>고객 피드백 수집 단계</li>
+        </ul>
+      </div>
+      <div class="pc-card cons reveal d4">
+        <div class="pc-title">주요 위험 &amp; 한계</div>
+        <ul class="pc-list">
+          <li>코드 이해 부족 → 숨겨진 버그</li>
+          <li>장기 유지보수 코드에 부적합</li>
+          <li>개발자 문제 해결 역량 약화 가능성</li>
+          <li>AI 생성 코드 검증 없이 사용 시 리스크</li>
+          <li>대규모 프로덕션 환경에서의 불안정성</li>
+          <li>AI가 항상 버그를 해결하지는 못함</li>
+        </ul>
+      </div>
+    </div>
+    <div class="reveal d6" style="margin-top:1.5rem;max-width:1100px;width:100%;">
+      <div class="content-block" style="background:rgba(255,107,133,0.08);border-color:rgba(255,107,133,0.28);">
+        <div class="block-body" style="font-style:italic;">
+          "생산 코드베이스로 가는 길에 바이브 코딩을 사용하는 것은 분명히 위험하다." <br> — Simon Willison (Ars Technica 인용)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: 보안 -->
+  <div class="slide" id="s11">
+    <div class="eyebrow reveal d0">Security Risks</div>
+    <div class="slide-title reveal d1" style="margin-bottom:2rem;"><span class="hl3">보안</span> 리스크</div>
+    <div class="security-grid">
+      <div class="sec-item reveal d2"><div class="sec-icon">💉</div><div><div class="sec-title">SQL 인젝션</div><div class="sec-body">AI 생성 코드가 사용자 입력 검증 없이 <br> SQL문을 구성할 경우 SQL 인젝션 위험 발생. <br> 기본 보안 지식 부족이 원인.</div></div></div>
+      <div class="sec-item reveal d3"><div class="sec-icon">🕸️</div><div><div class="sec-title">XSS 공격</div><div class="sec-body">사용자 입력 검증·출력 이스케이프 부족으로 <br>XSS 공격에 노출될 수 있음. <br>CSP 미설정은 피해 확산 위험을 높임. </div></div></div>
+      <div class="sec-item reveal d4"><div class="sec-icon">🔍</div><div><div class="sec-title">책임 불명확</div><div class="sec-body">개발자가 AI가 생성한 코드의 기능을 <br>완전히 이해하지 못한 채 사용. <br>감지되지 않은 버그와 <br>오류 발생 가능성 증가.</div></div></div>
+      <div class="sec-item reveal d5"><div class="sec-icon">🏭</div><div><div class="sec-title">전문 환경 위험</div><div class="sec-body">프로토타입에는 유용하지만, <br>보안 검토와 유지보수가 필요한 <br>프로덕션 환경에서는 위험.<br>(Databricks AI Red Team 보고)</div></div></div>
+    </div>
+    <div class="reveal d6" style="margin-top:1.5rem;max-width:1100px;width:100%;">
+      <div class="content-block" style="background:rgba(255,206,61,0.08);border-color:rgba(255,206,61,0.28);">
+        <div class="block-body">
+          <strong style="color:var(--accent4);">권고사항: AI 생성 코드는 신뢰된 결과물이 아니라 검토가 필요한 초안으로 다뤄야 한다. <br> 명세 작성, 아키텍처 판단, 보안 검토는 여전히 사람이 책임져야 한다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 12: 산업 영향 -->
+  <div class="slide" id="s12">
+    <div class="eyebrow reveal d0">Industry Impact</div>
+    <div class="slide-title reveal d1" style="margin-bottom:2rem;">산업 &amp; 사회적 <span class="hl">영향</span></div>
+    <div class="two-col" style="max-width:1050px;">
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="content-block reveal d2"><div class="block-title">🏢 스타트업 &amp; 기업</div><div class="block-body">비기술 창업자도 짧은 시간 안에 <br> 프로토타입·MVP를 제작해볼 수 있음. <br> 개발 리소스 부족을 AI 생성 코드로 보완하며, <br> 아이디어 검증과 <br> 시장 반응 확인 속도가 빨라짐.</div></div>
+        <div class="content-block reveal d3"><div class="block-title">📚 교육 &amp; 인재</div><div class="block-body">전통적 프로그래밍 교육의 역할에 대한 논의 재점화. <br>개발자는 단순 코드 작성자에서 <br>문제 정의·검증·AI 협업을 수행하는 역할로 이동.<br>비전공자도 간단한 <br>소프소프트웨어 제작에 진입 가능.</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="content-block reveal d4"><div class="block-title">🌍 민주화 효과</div><div class="block-body">Kevin Roose의 실험 사례처럼, <br>비개발자도 개인용 소프트웨어를 만들 수 있음.<br>다만 복잡한 작업에서는 한계와 오류가 발생하기 쉬움.</div></div>
+        <div class="content-block reveal d5"><div class="block-title">🔄 바이브 배포</div><div class="block-body">코드 생성 이후 배포 과정까지 자동화하려는 흐름 등장. <br> 일부 플랫폼은 서버 설정, <br> 도메인 연결, SSL 적용 등 <br> 배포 절차를 대화형으로 지원함. <br> 다만 프로덕션 운영에는 <br> 별도 보안·성능 검토가 필요함.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 13: 논쟁 -->
+  <div class="slide" id="s13">
+    <div class="eyebrow reveal d0">Debate</div>
+    <div class="slide-title reveal d1" style="margin-bottom:2rem;">찬반 <span class="hl4">논쟁</span></div>
+    <div class="concept-center" style="max-width:1050px;width:100%;">
+      <div class="concept-arrows">
+        <div class="ca-item reveal d2"><strong style="color:var(--accent2);">✓ 지지 입장</strong><br><br>초보자도 소프트웨어 엔지니어링 훈련 없이 <br> 코드 생산 가능. 개발 민주화의 새로운 장. <br> AI 도구를 전략적으로 활용하면 팀 전체<br>  생산성 혁신. 바이브 코딩은 단순 유행이 <br> 아닌 <strong>장기적 생산성 구조 혁신</strong>.</div>
+        <div class="ca-item reveal d3"><strong style="color:var(--accent3);">✗ 비판 입장</strong><br><br>Gary Marcus — 바이브 코딩의 열정이 <br> <em>"독창성이 아닌 재생산"</em>에서 비롯. <br> 실제 사용자 환경에서 AI 뼈대는 <br>버티지 못하는 경우 다수. <br>코드 품질·보안·유지보수 불확실성으로 <br>전문 환경 도입 신중해야.</div>
+        <div class="ca-item reveal d4"><strong style="color:var(--accent4);">⚖️ 균형 관점</strong><br><br>Dario Amodei — 인간 개발자의 역할이 <br> <strong>사라지는 것이 아닌 진화</strong>. <br>명세, 아키텍처, 보안 감독은 여전히 인간의 몫. <br>"처음엔 바이브, 이후엔 구조화된 설계"의<br> 균형이 핵심.</div>
+        <div class="ca-item reveal d5"><strong style="color:var(--accent1);">📰 언론 반응</strong><br><br>Business Insider — "실리콘 밸리의 새로운 <br>유행어". 콜린스 사전 올해의 단어 선정으로 <br> 대중화 확인. 2026년 개발자 84%가 이미 <br> AI 도구 사용 중이거나 사용 예정.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 14: 미래 전망 -->
+  <div class="slide" id="s14">
+    <div class="eyebrow reveal d0">Future Outlook</div>
+    <div class="slide-title reveal d1" style="margin-bottom:2rem;">미래 <span class="hl2">전망</span></div>
+    <div class="future-list">
+      <div class="future-item reveal d2"><div class="fi-num">01</div><div class="fi-text"><strong>개발자 역할 진화</strong> — 코드 작성자에서 AI 지휘자·검증자로 전환. 명세, 아키텍처 설계, <br>보안 감독이 핵심 역량으로 부상.</div></div>
+      <div class="future-item reveal d3"><div class="fi-num">02</div><div class="fi-text"><strong>도구 생태계 성숙</strong> — Cursor, Claude Code, Lovable 등 전문화된 AI 코딩 도구가 더욱 발전. <br> 코드 생성부터 배포까지 원스톱 자동화 확대.</div></div>
+      <div class="future-item reveal d4"><div class="fi-num">03</div><div class="fi-text"><strong>전략적 도입 가속</strong> — 기업들이 MVP 단계를 넘어 실제 제품 개발 파이프라인에 바이브 코딩 통합. <br> AI를 페어 프로그래머처럼 체계적으로 운용.</div></div>
+      <div class="future-item reveal d5"><div class="fi-num">04</div><div class="fi-text"><strong>보안 &amp; 품질 기준 정립</strong> — 바이브 코딩 시대에 맞는 새로운 코드 리뷰·보안 감사 방법론 등장. <br> AI 생성 코드에 대한 책임 기준 및 거버넌스 체계화.</div></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 15: END -->
+  <div class="slide" id="s15">
+    <div class="end-course reveal d0">이화여자대학교 · 2026년 1학기 · AI와 비즈니스 애플리케이션 · Mission 6 · 7조 </div>
+    <div class="end-circle">
+      <div class="end-word">VIBE</div>
+      <div class="end-word" style="color:var(--accent2);">ON</div>
+      <div class="end-sub">감사합니다</div>
+    </div>
+    <div class="end-team reveal d4">
+      <span class="team-chip">박민교 <b>철학 22</b></span>
+      <span class="team-chip">안은서 <b>커미 21</b></span>
+      <span class="team-chip">우민정 <b>경영 23</b></span>
+      <div style="flex-basis:100%; height:0;"></div>
+      <span class="team-chip">박혜원 <b>영문 23</b></span>
+      <span class="team-chip">송은채 <b>경영 24</b></span>
+      <span class="team-chip">Ei Shwe Sin <b>경영 23</b></span>
+      <span class="team-chip">조현지 <b>통계 22</b></span>
+    </div>
+    <div class="end-tags reveal d5">
+      <div class="end-tag">#바이브코딩</div>
+      <div class="end-tag">#VibeCoding</div>
+      <div class="end-tag">#AI코딩</div>
+      <div class="end-tag">#카파시</div>
+      <div class="end-tag">#LLM</div>
+    </div>
+    <div class="reveal d6" style="margin-top:1.6rem;font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--muted);text-align:center;letter-spacing:0.1em;">
+      출처: 한국어 위키백과 "바이브 코딩" · 2025–2026
+    </div>
+  </div>
+
+</div><!-- #deck -->
+
+<div id="progress"></div>
+<div id="counter">01 / 15</div>
+<div id="dots"></div>
+<button class="nav-btn" id="nav-prev">&#8592;</button>
+<button class="nav-btn" id="nav-next">&#8594;</button>
 
 <script>
-    const slides = [
-        "<h1>바이브 코딩(Vibe Coding)</h1><p>AI와 함께하는 새로운 개발 패러다임</p>",
-        "<h1>1. 바이브 코딩이란?</h1><p>엄밀한 설계보다 AI의 직관과 나의 '느낌'을 중시하는 코딩 방식</p>",
-        "<h1>2. 기원</h1><p>OpenAI 공동창립자 안드레 카파시(Andrej Karpathy)가 2025년 2월 제시</p>",
-        "<h1>3. 핵심 개념</h1><p>자연어 명령을 통해 코드를 생성하고 결과물을 즉시 확인</p>",
-        "<h1>4. '가장 뜨거운 언어는 영어'</h1><p>프로그래밍 언어 대신 일상 언어로 컴퓨터와 소통</p>",
-        "<h1>5. 주요 특징: 즉흥성</h1><p>사전 설계 없이 아이디어를 바로 코드로 구현</p>",
-        "<h1>6. 주요 특징: 빠른 프로토타이핑</h1><p>초기 버전을 신속히 만들고 수정하며 발전시킴</p>",
-        "<h1>7. 개발 환경 변화</h1><p>IDE가 AI 기반 에이전트로 진화 (예: Cursor, Claude Code)</p>",
-        "<h1>8. 장점: 생산성 향상</h1><p>반복적인 작업 자동화 및 구현 속도 극대화</p>",
-        "<h1>9. 장점: 진입 장벽 완화</h1><p>비전문가도 소프트웨어 구현 가능</p>",
-        "<h1>10. 단점: 기술 부채</h1><p>구조적 설계가 부족하여 유지보수 어려움 발생 가능</p>",
-        "<h1>11. 단점: 코드 이해 부족</h1><p>동작 원리를 완벽히 이해하지 못한 채 수용할 위험</p>",
-        "<h1>12. 성공적인 활용법</h1><p>AI 결과물을 검토하고 반복적으로 개선하기</p>",
-        "<h1>13. 미래의 개발자</h1><p>단순 코더에서 AI를 지휘하는 '설계자(Architect)'로</p>",
-        "<h1>15. 결론</h1><p>바이브 코딩은 개발의 효율을 넘어 창의적 탐색의 도구입니다.</p>"
-    ];
+(function() {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let cur = 0, animating = false;
 
-    const container = document.getElementById('slides-container');
-    slides.forEach((content, index) => {
-        const div = document.createElement('div');
-        div.className = 'slide' + (index === 0 ? ' active' : '');
-        div.innerHTML = content + `<div class="footer">${index + 1} / 15</div>`;
-        container.appendChild(div);
-    });
+  const dotsEl = document.getElementById('dots');
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(d);
+  });
 
-    let current = 0;
-    document.addEventListener('keydown', (e) => {
-        if(e.key === 'ArrowRight' && current < 14) {
-            document.querySelectorAll('.slide')[current].classList.remove('active');
-            current++;
-            document.querySelectorAll('.slide')[current].classList.add('active');
-        } else if(e.key === 'ArrowLeft' && current > 0) {
-            document.querySelectorAll('.slide')[current].classList.remove('active');
-            current--;
-            document.querySelectorAll('.slide')[current].classList.add('active');
-        }
+  function animateCounters(slide) {
+    slide.querySelectorAll('[data-count]').forEach(el => {
+      const target = parseFloat(el.dataset.count);
+      const suffix = el.dataset.suffix || '';
+      let start = null;
+      const dur = 1100;
+      function tick(ts) {
+        if (!start) start = ts;
+        const p = Math.min((ts - start) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased) + suffix;
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
     });
+  }
+
+  function goTo(n) {
+    if (n === cur || animating) return;
+    animating = true;
+    const prev = cur;
+    cur = n;
+
+    slides[prev].classList.remove('active');
+    slides[prev].classList.add('exit-up');
+    setTimeout(() => slides[prev].classList.remove('exit-up'), 450);
+
+    const incoming = slides[cur];
+    // replay reveal animations
+    incoming.querySelectorAll('.reveal').forEach(el => {
+      el.style.animation = 'none';
+      el.offsetHeight;
+      el.style.animation = '';
+    });
+    incoming.classList.add('active');
+    animateCounters(incoming);
+
+    document.getElementById('counter').textContent =
+      String(cur + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+    document.getElementById('progress').style.width = ((cur + 1) / total * 100) + '%';
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === cur));
+
+    setTimeout(() => { animating = false; }, 650);
+  }
+
+  function next() { if (cur < total - 1) goTo(cur + 1); }
+  function prev() { if (cur > 0) goTo(cur - 1); }
+
+  document.getElementById('nav-next').addEventListener('click', next);
+  document.getElementById('nav-prev').addEventListener('click', prev);
+
+  let numBuffer = '', numTimer = null;
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); return; }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); return; }
+    if (e.key === 'Home') { goTo(0); return; }
+    if (e.key === 'End') { goTo(total - 1); return; }
+    const digit = e.code.startsWith('Digit') ? e.code.slice(5)
+                : e.code.startsWith('Numpad') ? e.code.slice(6) : null;
+    if (digit !== null && digit >= '0' && digit <= '9') {
+      e.preventDefault();
+      numBuffer += digit;
+      clearTimeout(numTimer);
+      numTimer = setTimeout(() => {
+        const nn = parseInt(numBuffer, 10);
+        if (nn >= 1 && nn <= total) goTo(nn - 1);
+        numBuffer = '';
+      }, 600);
+    }
+  });
+
+  let tx = 0;
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) { dx < 0 ? next() : prev(); }
+  });
+
+  let wheelTimer = null;
+  document.addEventListener('wheel', e => {
+    e.preventDefault();
+    if (wheelTimer) return;
+    if (e.deltaY > 30) next(); else if (e.deltaY < -30) prev();
+    wheelTimer = setTimeout(() => { wheelTimer = null; }, 800);
+  }, { passive: false });
+
+  document.getElementById('progress').style.width = (1 / total * 100) + '%';
+  animateCounters(slides[0]);
+})();
 </script>
+
+<div id="remote-trigger"></div>
+<div id="remote">
+  <div class="remote-header">키보드 단축키</div>
+  <div class="remote-section">
+    <div class="remote-section-label">슬라이드 이동</div>
+    <div class="remote-rows">
+      <div class="remote-row"><span class="rkey">→</span><span class="rkey">↓</span><span class="rkey wide">Space</span><span class="rdesc">다음 슬라이드</span></div>
+      <div class="remote-row"><span class="rkey">←</span><span class="rkey">↑</span><span class="rdesc">이전 슬라이드</span></div>
+    </div>
+  </div>
+  <hr class="remote-divider">
+  <div class="remote-section">
+    <div class="remote-section-label">빠른 이동</div>
+    <div class="remote-rows">
+      <div class="remote-row"><span class="rkey">1</span><span class="rdesc">– 숫자키로 해당 슬라이드 바로 이동</span></div>
+      <div class="remote-row"><span class="rkey">1</span><span class="rkey">5</span><span class="rdesc">두 자리 연속 입력 (0.6s 내)</span></div>
+      <div class="remote-row"><span class="rkey wide">Home</span><span class="rdesc">첫 번째 슬라이드</span></div>
+      <div class="remote-row"><span class="rkey wide">End</span><span class="rdesc">마지막 슬라이드</span></div>
+    </div>
+  </div>
+  <hr class="remote-divider">
+  <div class="remote-section">
+    <div class="remote-section-label">기타</div>
+    <div class="remote-rows">
+      <div class="remote-row"><span class="rdesc">🖱 휠 스크롤 · 스와이프로도 이동 가능</span></div>
+      <div class="remote-row"><span class="rdesc">• 하단 점(●)을 클릭해 슬라이드 선택</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const trigger = document.getElementById('remote-trigger');
+  const remote = document.getElementById('remote');
+  let hideTimer = null;
+  function show() { clearTimeout(hideTimer); remote.classList.add('visible'); }
+  function hide() { hideTimer = setTimeout(() => remote.classList.remove('visible'), 200); }
+  trigger.addEventListener('mouseenter', show);
+  trigger.addEventListener('mouseleave', hide);
+  remote.addEventListener('mouseenter', show);
+  remote.addEventListener('mouseleave', hide);
+})();
+</script>
+
 </body>
 </html>
+
+
